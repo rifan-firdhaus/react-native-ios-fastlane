@@ -1,4 +1,4 @@
-project_name= "moneyHero"
+project_name= "peachmobile"
 scheme = project_name
 build_configuration = ENV['CONFIGURATION']
 project_path = "./#{project_name}.xcodeproj"
@@ -100,7 +100,7 @@ platform :ios do
 
       gym(
         clean: false,
-        project: "../peachmobile/ios/#{project_name}.xcodeproj",
+        project: "../ios/#{project_name}.xcodeproj",
         scheme: project_name,
         export_method: ENV['EXPORT_METHOD'],
         configuration: ENV['CONFIGURATION'],
@@ -124,7 +124,7 @@ platform :ios do
       puts "### build full app .xcworkspace"
       gym(
         scheme: project_name,
-        workspace: "../peachmobile/ios/#{project_name}.xcworkspace",
+        workspace: "../ios/#{project_name}.xcworkspace",
         export_method: ENV['EXPORT_METHOD'],
         derived_data_path: cached_derived_data_path,
         configuration: ENV['CONFIGURATION'],
