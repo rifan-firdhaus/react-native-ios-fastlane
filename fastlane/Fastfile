@@ -1,11 +1,11 @@
 project_name= "moneyHero"
 scheme = project_name
 build_configuration = ENV['CONFIGURATION']
-xcodeproj_path = "./#{project_name}.xcodeproj"
+project_path = "./#{project_name}.xcodeproj"
 cached_derived_data_path = File.expand_path("../cached_derived_data")
 cache_folder = File.expand_path("#{cached_derived_data_path}/Build/Intermediates.noindex/ArchiveIntermediates/#{scheme}/BuildProductsPath/#{build_configuration}-iphoneos")
 intermediates_path = "#{cached_derived_data_path}/Build/Intermediates.noindex/ArchiveIntermediates/#{project_name}"
-project_path = ENV['PROJECT_PATH']
+
 
 default_platform(:ios)
 
@@ -60,19 +60,19 @@ platform :ios do
 
     update_code_signing_settings(
       use_automatic_signing: false,
-      path: xcodeproj_path,
+      path: ENV["PROJECT_PATH"],
       code_sign_identity: ENV['CODE_SIGNING_IDENTITY'],
       targets: update_targets
     )
 
     update_project_provisioning(
-      xcodeproj: xcodeproj_path,
+      xcodeproj: ENV["PROJECT_PATH"],
       profile: "ios-build.mobileprovision",
       code_signing_identity: ENV["CODE_SIGNING_IDENTITY"]
     )
 
     update_project_team(
-      path: xcodeproj_path,
+      path: ENV["PROJECT_PATH"],
       teamid: ENV["TEAM_ID"],
       targets: update_targets
     )
@@ -100,7 +100,7 @@ platform :ios do
 
       gym(
         clean: false,
-        project: "../#{project_path}/#{project_name}.xcodeproj",
+        project: "../peachmobile/ios/#{project_name}.xcodeproj",
         scheme: project_name,
         export_method: ENV['EXPORT_METHOD'],
         configuration: ENV['CONFIGURATION'],
