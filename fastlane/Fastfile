@@ -100,7 +100,7 @@ platform :ios do
 
       gym(
         clean: false,
-        project: "../ios/#{project_name}.xcodeproj",
+        project: "../peach-app/ios/#{project_name}.xcodeproj",
         scheme: project_name,
         export_method: ENV['EXPORT_METHOD'],
         configuration: ENV['CONFIGURATION'],
@@ -110,7 +110,7 @@ platform :ios do
         export_options: {
           compileBitcode: false,
           uploadBitcode: false,
-          uploadSymbols: false 
+          uploadSymbols: false
         },
         xcargs: [
             # Set paths where xcode can find pods binaries
@@ -124,7 +124,7 @@ platform :ios do
       puts "### build full app .xcworkspace"
       gym(
         scheme: project_name,
-        workspace: "../ios/#{project_name}.xcworkspace",
+        workspace: "../peach-app/ios/#{project_name}.xcworkspace",
         export_method: ENV['EXPORT_METHOD'],
         derived_data_path: cached_derived_data_path,
         configuration: ENV['CONFIGURATION'],
