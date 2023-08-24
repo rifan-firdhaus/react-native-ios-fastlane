@@ -1,0 +1,151 @@
+project_name= "moneyHero"
+scheme = project_name
+build_configuration = ENV['CONFIGURATION']
+xcodeproj_path = "./#{project_name}.xcodeproj"
+cached_derived_data_path = File.expand_path("../cached_derived_data")
+cache_folder = File.expand_path("#{cached_derived_data_path}/Build/Intermediates.noindex/ArchiveIntermediates/#{scheme}/BuildProductsPath/#{build_configuration}-iphoneos")
+intermediates_path = "#{cached_derived_data_path}/Build/Intermediates.noindex/ArchiveIntermediates/#{project_name}"
+project_path = ENV['PROJECT_PATH']
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Export ipa"
+  lane :export_ipa do
+    keychain_password = SecureRandom.uuid
+
+    create_keychain(
+      name: "ios-build.keychain",
+      password: keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600
+    )
+
+    if ENV["CERTIFICATE_SPLIT"] == '1'
+      import_certificate(
+        certificate_path: "ios-build-key.p12",
+        certificate_password: ENV["CERTIFICATE_PASSWORD"],
+        keychain_name: "ios-build.keychain",
+        keychain_password: keychain_password,
+        log_output: true
+      )
+      import_certificate(
+        certificate_path: "ios-build-key.cer",
+        certificate_password: ENV["CERTIFICATE_PASSWORD"],
+        keychain_name: "ios-build.keychain",
+        keychain_password: keychain_password,
+        log_output: true
+      )
+    else
+      import_certificate(
+        certificate_path: "ios-build.p12",
+        certificate_password: ENV["CERTIFICATE_PASSWORD"],
+        keychain_name: "ios-build.keychain",
+        keychain_password: keychain_password,
+        log_output: true
+      )
+    end
+
+    install_provisioning_profile(
+      path: "ios-build.mobileprovision"
+    )
+
+    update_targets = nil
+    if !ENV['UPDATE_TARGETS'].empty?
+      update_targets = ENV['UPDATE_TARGETS'].split(/\R/)
+    elsif !ENV['DISABLE_TARGETS'].empty?
+      update_targets = ENV['DISABLE_TARGETS'].split(/,/)
+    end
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: xcodeproj_path,
+      code_sign_identity: ENV['CODE_SIGNING_IDENTITY'],
+      targets: update_targets
+    )
+
+    update_project_provisioning(
+      xcodeproj: xcodeproj_path,
+      profile: "ios-build.mobileprovision",
+      code_signing_identity: ENV["CODE_SIGNING_IDENTITY"]
+    )
+
+    update_project_team(
+      path: xcodeproj_path,
+      teamid: ENV["TEAM_ID"],
+      targets: update_targets
+    )
+
+    if ENV["BUILD_PODS"] == 'true'
+      cocoapods(
+        podfile: ENV["PODS_PATH"]
+      )
+    end
+
+    use_workspace = !ENV['WORKSPACE_PATH'].empty?
+    if(File.exist?(cache_folder))
+      # - Loop over scripts in build phase `[CP] Copy Pods Resources`
+      # - Prepend `BUILT_PRODUCTS_DIR=#{cache_folder}``
+      fastlane_require 'xcodeproj'
+      project = Xcodeproj::Project.open("../ios/#{project_name}.xcodeproj")
+      target = project.targets.select { |target| target.name == project_name }.first
+      phase = target.shell_script_build_phases.select { |phase| phase.name && phase.name.include?('Copy Pods Resources') }.first
+      if (!phase.shell_script.start_with?('BUILT_PRODUCTS_DIR'))
+        phase.shell_script = "BUILT_PRODUCTS_DIR=#{cache_folder} #{phase.shell_script}"
+        project.save()
+      end
+
+      puts "### build only .xcodeproj"
+
+      gym(
+        clean: false,
+        project: "../#{project_path}/#{project_name}.xcodeproj",
+        scheme: project_name,
+        export_method: ENV['EXPORT_METHOD'],
+        configuration: ENV['CONFIGURATION'],
+        output_directory: File.dirname(ENV['OUTPUT_PATH']),
+        output_name: File.basename(ENV['OUTPUT_PATH']),
+        export_team_id: ENV['TEAM_ID'],
+        export_options: {
+          compileBitcode: false,
+          uploadBitcode: false,
+          uploadSymbols: false 
+        },
+        xcargs: [
+            # Set paths where xcode can find pods binaries
+            "PODS_CONFIGURATION_BUILD_DIR='#{cache_folder}'",
+            "FRAMEWORK_SEARCH_PATHS='#{cache_folder} $(inherited)'",
+            "LIBRARY_SEARCH_PATHS='#{cache_folder} $(inherited)'",
+            "SWIFT_INCLUDE_PATHS=#{cache_folder}"
+        ].join(" ")
+      )
+    else
+      puts "### build full app .xcworkspace"
+      gym(
+        scheme: project_name,
+        workspace: "../mh-finext-app/ios/#{project_name}.xcworkspace",
+        export_method: ENV['EXPORT_METHOD'],
+        derived_data_path: cached_derived_data_path,
+        configuration: ENV['CONFIGURATION'],
+        output_directory: File.dirname(ENV['OUTPUT_PATH']),
+        output_name: File.basename(ENV['OUTPUT_PATH']),
+        clean: true,
+        export_team_id: ENV['TEAM_ID'],
+      )
+
+    end
+
+    if ENV["BROWSERSTACK_UPLOAD"] == 'true'
+        upload_to_browserstack_app_live(
+            browserstack_username: ENV["BROWSERSTACK_USERNAME"],
+            browserstack_access_key: ENV["BROWSERSTACK_ACCESS_KEY"],
+            file_path: ENV["OUTPUT_PATH"]
+        )
+    end
+
+    delete_keychain(
+      name: "ios-build.keychain"
+    )
+  end
+end
