@@ -124,7 +124,7 @@ platform :ios do
       puts "### build full app .xcworkspace"
       gym(
         scheme: project_name,
-        workspace: "../mh-finext-app/ios/#{project_name}.xcworkspace",
+        workspace: "../peachmobile/ios/#{project_name}.xcworkspace",
         export_method: ENV['EXPORT_METHOD'],
         derived_data_path: cached_derived_data_path,
         configuration: ENV['CONFIGURATION'],
