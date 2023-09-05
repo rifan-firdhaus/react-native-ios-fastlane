@@ -136,6 +136,12 @@ platform :ios do
 
     end
 
+    upload_symbols_to_crashlytics(
+      dsym_path: "../peach-app/output.app.dSYM.zip",
+      gsp_path: "../peach-app/ios/GoogleService-Info.plist",
+      binary_path: ENV["OUTPUT_PATH"]
+    )
+
     if ENV["BROWSERSTACK_UPLOAD"] == 'true'
         upload_to_browserstack_app_live(
             browserstack_username: ENV["BROWSERSTACK_USERNAME"],
